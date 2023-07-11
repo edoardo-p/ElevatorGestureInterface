@@ -7,10 +7,11 @@ from pynput.keyboard import Key, Listener
 import logging
 import threading
 
+USER = "gio"
 
 data_path = "./data/values/"
 labels_path = "./data/labels/"
-labels_dataset = labels_path + "1 label dataset.json"
+labels_dataset = labels_path + "1 label dataset_with_user.json"
 values_dataset = data_path + "1 values dataset.json"
 stop_event = threading.Event() 
 
@@ -41,7 +42,7 @@ def update_labels_files():
                 val = line[1].replace('\n', '')
                 if val not in ['Key.left', 'Key.right', "Key.up", "Key.down"]:
                     continue
-                labels[line[0]] = line[1].replace('\n', '')
+                labels[line[0]] = {"label": line[1].replace('\n', ''), "user": USER}
             except:
                 continue
     dataset = json.load(open(labels_dataset, 'r'))
