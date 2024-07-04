@@ -12,14 +12,19 @@ HandLandmarkerResult = mp.tasks.vision.HandLandmarkerResult
 VisionRunningMode = mp.tasks.vision.RunningMode
 
 landmark_buffer = np.zeros((21, 2), dtype=np.int32)
+handedness = ""
 
 
 def print_result(
         result: HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int
 ):
+    global landmark_buffer, handedness
     if not result.hand_landmarks or not result.hand_landmarks[0]:
+        landmark_buffer = np.zeros((21, 2), dtype=np.int32)
+        handedness = ""
         return
 
+    handedness = result.handedness[0][0].display_name
     update_landmark_buffer(
         result.hand_landmarks[0], output_image.width, output_image.height
     )
@@ -78,6 +83,10 @@ def display_landmarks(image: np.ndarray) -> None:
         cv2.putText(
             image, f"{i}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255)
         )
+
+    if handedness is not None:
+        hand_center = landmark_buffer.mean(axis=0, dtype=np.int32)
+        cv2.putText(image, handedness, hand_center, cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255))
 
 
 def main():
