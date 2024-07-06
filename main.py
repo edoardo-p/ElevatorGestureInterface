@@ -9,29 +9,12 @@ from vis import DataBuffer
 BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
-HandLandmarkerResult = mp.tasks.vision.HandLandmarkerResult
-HandLandmarksConnections = mp.tasks.vision.HandLandmarksConnections
 VisionRunningMode = mp.tasks.vision.RunningMode
 
 DATA_DIR = Path(r".\data")
 MODELS_DIR = Path(r".\models")
 
 MAX_HANDS = 1
-
-
-def take_picture(path: str) -> None:
-    video = cv2.VideoCapture(0)
-
-    while True:
-        _, frame = video.read()
-
-        cv2.imshow("Hand recognizer", frame)
-        if cv2.waitKey(1) & 0xFF == ord(" "):
-            cv2.imwrite(path, frame)
-            break
-
-    video.release()
-    cv2.destroyAllWindows()
 
 
 def main():

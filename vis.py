@@ -2,12 +2,8 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-BaseOptions = mp.tasks.BaseOptions
-HandLandmarker = mp.tasks.vision.HandLandmarker
-HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 HandLandmarkerResult = mp.tasks.vision.HandLandmarkerResult
 HandLandmarksConnections = mp.tasks.vision.HandLandmarksConnections
-VisionRunningMode = mp.tasks.vision.RunningMode
 
 
 class DataBuffer:
