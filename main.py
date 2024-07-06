@@ -9,7 +9,13 @@ BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 HandLandmarkerResult = mp.tasks.vision.HandLandmarkerResult
+HandLandmarksConnections = mp.tasks.vision.HandLandmarksConnections
 VisionRunningMode = mp.tasks.vision.RunningMode
+
+DATA_DIR = Path(r".\data")
+MODELS_DIR = Path(r".\models")
+
+MAX_HANDS = 1
 
 landmark_buffer = np.zeros((21, 2), dtype=np.int32)
 handedness = ""
@@ -51,32 +57,8 @@ def update_landmark_buffer(landmarks, width: int, height: int) -> None:
 
 
 def display_landmarks(image: np.ndarray) -> None:
-    connections = [
-        (0, 1),
-        (0, 17),
-        (1, 2),
-        (1, 5),
-        (2, 3),
-        (3, 4),
-        (5, 6),
-        (5, 9),
-        (6, 7),
-        (7, 8),
-        (9, 10),
-        (9, 13),
-        (10, 11),
-        (11, 12),
-        (13, 14),
-        (13, 17),
-        (14, 15),
-        (15, 16),
-        (17, 18),
-        (18, 19),
-        (19, 20),
-    ]
-
-    for i_start, i_end in connections:
-        cv2.line(image, landmark_buffer[i_start], landmark_buffer[i_end], (255, 255, 255), 2)
+    for conn in HandLandmarksConnections.HAND_CONNECTIONS:
+        cv2.line(image, landmark_buffer[conn.start], landmark_buffer[conn.end], (255, 255, 255), 2)
 
     for i, (x, y) in enumerate(landmark_buffer):
         cv2.circle(image, (x, y), 5, (0, 0, 255), -1)
@@ -90,13 +72,12 @@ def display_landmarks(image: np.ndarray) -> None:
 
 
 def main():
-    data_dir = Path(r".\data")
-    models_dir = Path(r".\models")
-    model_path = models_dir / "hand_landmarker.task"
+    model_path = MODELS_DIR / "hand_landmarker.task"
 
     options = HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=model_path),
         running_mode=VisionRunningMode.LIVE_STREAM,
+        num_hands=MAX_HANDS,
         result_callback=print_result,
     )
 
