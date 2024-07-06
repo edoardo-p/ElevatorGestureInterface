@@ -1,7 +1,0 @@
-mediapiper GestureRecognizer returns 21 hand landmarks
-
-world coordinates: x, y, z values in meters with the hand's geometric center as the origin
-normal coordinates: x, y, z values. x, y values normalized to [0, 1], z value distance from camera with wrist at 0
-
-convert coordinates to pixels:
-find the 
