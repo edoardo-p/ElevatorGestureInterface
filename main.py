@@ -4,14 +4,13 @@ from pathlib import Path
 import cv2
 import mediapipe as mp
 
-from vis import DataBuffer
+from callback import DataBuffer
 
 BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 VisionRunningMode = mp.tasks.vision.RunningMode
 
-DATA_DIR = Path(r".\data")
 MODELS_DIR = Path(r".\models")
 
 MAX_HANDS = 1
