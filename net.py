@@ -3,8 +3,21 @@ import torch
 import torch.nn as nn
 from torch.utils.data.dataset import Dataset
 
+GESTURE_NAMES = [
+    "Ground floor",
+    "First floor",
+    "Second floor",
+    "Third floor",
+    "Fourth floor",
+    "Fifth floor",
+    "Up",
+    "Down",
+    "Open doors",
+    "Close doors",
+]
 
-class Net(nn.Module):
+
+class GestureNet(nn.Module):
     def __init__(self, num_gestures: int, num_landmarks: int = 21):
         super().__init__()
         self.net = nn.Sequential(

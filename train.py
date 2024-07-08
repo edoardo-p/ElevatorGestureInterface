@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data.dataloader import DataLoader
 
-from net import Net, LandmarkDataset
+from net import GestureNet, LandmarkDataset
 
 DATA_DIR = Path(r".\data")
 MODEL_DIR = Path(r".\models")
@@ -84,7 +84,7 @@ def main():
     test_loader = DataLoader(LandmarkDataset(test_set), batch_size=hyperparams["batch_size"], shuffle=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = Net(num_gestures=10)
+    model = GestureNet(num_gestures=10)
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparams["lr"])
     loss_fn = torch.nn.CrossEntropyLoss()
 

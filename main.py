@@ -1,10 +1,12 @@
 import time
+import torch
 from pathlib import Path
 
 import cv2
 import mediapipe as mp
 
 from callback import DataBuffer
+from net import GestureNet
 
 BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
@@ -17,15 +19,17 @@ MAX_HANDS = 1
 
 
 def main():
-    model_path = MODELS_DIR / "hand_landmarker.task"
     buffer = DataBuffer()
 
     options = HandLandmarkerOptions(
-        base_options=BaseOptions(model_asset_path=model_path),
+        base_options=BaseOptions(model_asset_path=MODELS_DIR / "hand_landmarker.task"),
         running_mode=VisionRunningMode.LIVE_STREAM,
         num_hands=MAX_HANDS,
         result_callback=buffer.result_callback,
     )
+
+    model = GestureNet(num_gestures=10)
+    model.load_state_dict(torch.load(MODELS_DIR / "gesture_net.pth"))
 
     video = cv2.VideoCapture(0)
 
