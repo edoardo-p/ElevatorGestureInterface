@@ -21,7 +21,7 @@ class GestureNet(nn.Module):
     def __init__(self, num_gestures: int, num_landmarks: int = 21):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(num_landmarks, 32),
+            nn.Linear(num_landmarks * 2, 32),
             nn.ReLU(),
             nn.Linear(32, 32),
             nn.ReLU(),
