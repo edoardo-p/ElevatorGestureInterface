@@ -18,6 +18,9 @@ GESTURES = ("0", "1", "2", "3", "4", "5", "u", "d", "o", "c")
 
 
 def take_picture(path: Path) -> None:
+    for gesture in GESTURES:
+        os.makedirs(path / gesture, exist_ok=True)
+
     video = cv2.VideoCapture(0)
 
     while True:
