@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.utils.data.dataloader import DataLoader
+from tqdm import tqdm
 
 from net import GestureNet, LandmarkDataset
 
@@ -45,7 +46,7 @@ def train(
     best_mse = float("inf")
     mses = []
 
-    for epoch in range(epochs):
+    for epoch in tqdm(range(epochs)):
         model.train()
 
         for landmarks, gesture in train_loader:
@@ -53,8 +54,8 @@ def train(
             gesture = gesture.to(device)
 
             optimizer.zero_grad()
-            predicted = model(landmarks).argmax(dim=1)
-            loss_fn(predicted, gesture).backwards()
+            predicted = model(landmarks)
+            loss_fn(predicted, gesture).backward()
             optimizer.step()
 
         # Eval metrics

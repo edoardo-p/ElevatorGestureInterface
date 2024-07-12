@@ -36,10 +36,11 @@ class GestureNet(nn.Module):
 class LandmarkDataset(Dataset):
     def __init__(self, data: np.ndarray):
         self.landmarks = data[:, :-1]
-        self.gestures = data[:, -1]
+        gestures = data[:, -1]
+        self.one_hot_gestures = nn.functional.one_hot(torch.tensor(gestures, dtype=torch.long), num_classes=10)
 
     def __len__(self) -> int:
-        return self.gestures.shape[0]
+        return self.landmarks.shape[0]
 
     def __getitem__(self, item: int) -> tuple[torch.Tensor, torch.Tensor]:
-        return torch.tensor(self.landmarks[item]), torch.tensor(self.gestures[item])
+        return torch.tensor(self.landmarks[item], dtype=torch.float32), self.one_hot_gestures[item].to(torch.float32)
