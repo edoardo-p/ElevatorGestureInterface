@@ -46,7 +46,7 @@ def train(
     best_mse = float("inf")
     mses = []
 
-    for epoch in tqdm(range(epochs)):
+    for _ in (pbar := tqdm(range(epochs))):
         model.train()
 
         for landmarks, gesture in train_loader:
@@ -62,7 +62,7 @@ def train(
         model.eval()
         mse = calc_mse(model, test_loader, device)
         mses.append(mse)
-        print(f"Epoch {epoch:03d}\t MSE: {sum(mses) / len(mses):.4f}")
+        pbar.set_description(f"MSE: {mse:.4f}")
 
         if mse < best_mse:
             torch.save(model, f"{MODEL_DIR}{model.__class__.__name__}.pt")
@@ -77,7 +77,7 @@ def main():
         "train_split": 0.8,
         "lr": 0.001,
         "batch_size": 16,
-        "epochs": 50,
+        "epochs": 500,
     }
 
     train_set, test_set = split_data(data, hyperparams["train_split"])
