@@ -24,13 +24,13 @@ def calc_mse(model: torch.nn.Module, loader: DataLoader, device: torch.device) -
         landmarks = landmarks.to(device)
         gesture = gesture.to(device)
 
-        predicted = model(landmarks).argmax(dim=1)
+        predicted = model(landmarks)
 
         # Calc MSE
-        mse = torch.square(gesture - predicted)
-        mses.append(mse)
+        mse = torch.nn.functional.mse_loss(gesture, predicted)
+        mses.append(mse.detach())
 
-    return np.array(mses).flatten().mean()
+    return np.array(mses).mean()
 
 
 def train(
