@@ -65,7 +65,7 @@ def train(
         pbar.set_description(f"MSE: {mse:.4f}")
 
         if mse < best_mse:
-            torch.save(model, f"{MODEL_DIR}{model.__class__.__name__}.pt")
+            torch.save(model.state_dict(), Path(f"{MODEL_DIR}/{model.__class__.__name__}.pt"))
 
     return mses
 
