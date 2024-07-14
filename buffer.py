@@ -10,16 +10,17 @@ HandLandmarksConnections = mp.tasks.vision.HandLandmarksConnections
 
 class DataBuffer:
     def __init__(self, sample_size: int):
-        self.landmarks_buffer: deque[np.ndarray] = deque(maxlen=sample_size)
+        self.sample_size = sample_size
+        self.landmarks_buffer: deque[np.ndarray[np.float32]] = deque(maxlen=sample_size)
         self.handedness_buffer: deque[str] = deque(maxlen=sample_size)
 
-    def clear(self):
-        self.landmarks_buffer.clear()
-        self.handedness_buffer.clear()
+    @property
+    def is_full(self) -> bool:
+        return len(self.landmarks_buffer) == self.sample_size
 
     def add_result(self, result: HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int) -> None:
         if not result.hand_landmarks or not result.hand_landmarks[0]:
-            self.clear()
+            self._clear()
             return
 
         self.handedness_buffer.append(result.handedness[0][0].display_name)
@@ -27,13 +28,7 @@ class DataBuffer:
             result.hand_landmarks[0]
         )
 
-    def _update_landmarks_buffer(self, landmarks) -> None:
-        landmark_coords = np.empty((21, 2), dtype=np.float32)
-        for i, landmark in enumerate(landmarks):
-            landmark_coords[i] = landmark.x, landmark.y
-        self.landmarks_buffer.append(landmark_coords)
-
-    def display_landmarks(self, image: np.ndarray) -> np.ndarray:
+    def display_landmarks(self, image: np.ndarray[np.int32]) -> np.ndarray[np.int32]:
         if not self.landmarks_buffer:
             return image
 
@@ -49,3 +44,13 @@ class DataBuffer:
         cv2.putText(image, self.handedness_buffer[-1], hand_center, cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255))
 
         return image
+
+    def _update_landmarks_buffer(self, landmarks) -> None:
+        landmark_coords = np.empty((21, 2), dtype=np.float32)
+        for i, landmark in enumerate(landmarks):
+            landmark_coords[i] = landmark.x, landmark.y
+        self.landmarks_buffer.append(landmark_coords)
+
+    def _clear(self) -> None:
+        self.landmarks_buffer.clear()
+        self.handedness_buffer.clear()
