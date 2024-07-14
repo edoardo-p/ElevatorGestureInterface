@@ -32,6 +32,14 @@ class GestureNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x).softmax(dim=0)
 
+    def infer(self, landmarks: np.ndarray, handedness: str) -> str:
+        if handedness == "Left":
+            # TODO flip x coord
+            pass
+        tensor = torch.tensor(landmarks, dtype=torch.float32).reshape(1, -1)
+        prediction = self.net(tensor).argmax(dim=1).squeeze()
+        return GESTURE_NAMES[prediction.item()]
+
 
 class LandmarkDataset(Dataset):
     def __init__(self, data: np.ndarray):

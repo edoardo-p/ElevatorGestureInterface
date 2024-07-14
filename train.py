@@ -62,7 +62,7 @@ def train(
         model.eval()
         mse = calc_mse(model, test_loader, device)
         mses.append(mse)
-        pbar.set_description(f"MSE: {mse:.4f}")
+        pbar.set_description(f"Test MSE: {mse:.4f}")
 
         if mse < best_mse:
             torch.save(model.state_dict(), Path(f"{MODEL_DIR}/{model.__class__.__name__}.pt"))
