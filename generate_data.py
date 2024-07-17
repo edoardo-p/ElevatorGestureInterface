@@ -67,7 +67,10 @@ def convert_image_to_numpy(data_dir: Path, model_path: Path) -> None:
 
                 if handedness == "Left":
                     # Flips the x-coordinates to always have a 'right' hand
-                    coords = [(1 - landmark.x * width, landmark.y * height) for landmark in landmarks]
+                    coords = [
+                        (1 - landmark.x * width, landmark.y * height)
+                        for landmark in landmarks
+                    ]
                 elif handedness == "Right":
                     coords = [(landmark.x, landmark.y) for landmark in landmarks]
                 else:
@@ -83,8 +86,13 @@ def convert_image_to_numpy(data_dir: Path, model_path: Path) -> None:
         print(f"Removed {len(invalid_photos)} photos of unrecognized hands")
 
 
+def print_data_description(path: Path) -> None:
+    arr = np.load(path)
+    print(f"{arr.shape}, {arr.dtype}")
+    print(f"Unique gestures: {np.unique(arr[:, -1], return_counts=True)}")
+
+
 if __name__ == "__main__":
     # take_picture(DATA_DIR / "images")
-    convert_image_to_numpy(DATA_DIR, MODELS_DIR / "hand_landmarker.task")
-    arr = np.load(DATA_DIR / "hands.npy")
-    print(arr.shape, arr.dtype)
+    # convert_image_to_numpy(DATA_DIR, MODELS_DIR / "hand_landmarker.task")
+    print_data_description(DATA_DIR / "hands.npy")
