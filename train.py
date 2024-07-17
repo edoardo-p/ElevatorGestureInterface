@@ -23,9 +23,15 @@ NUM_GESTURES = 10
 
 
 def split_data(data: np.ndarray, train_split: float) -> tuple[np.ndarray, np.ndarray]:
-    split_index = int(data.shape[0] * train_split)
-    np.random.shuffle(data)
-    return data[:split_index], data[split_index:]
+    train_data, test_data = [], []
+    for count in np.unique(data[:, -1]):
+        sub_data = data[data[:, -1] == count]
+        np.random.shuffle(sub_data)
+        split_index = int(sub_data.shape[0] * train_split)
+        train_data.append(sub_data[:split_index])
+        test_data.append(sub_data[split_index:])
+
+    return np.concatenate(train_data, axis=0), np.concatenate(test_data, axis=0)
 
 
 def update_metrics(
@@ -108,7 +114,7 @@ def main():
     hyperparams = {
         "train_split": 0.8,
         "lr": 0.001,
-        "batch_size": 16,
+        "batch_size": 64,
         "epochs": 500,
     }
 
@@ -127,25 +133,25 @@ def main():
 
     metrics_dict = {
         MulticlassAccuracy(device=device): "Accuracy",
-        MulticlassF1Score(device=device): "F1 Score",
         MulticlassPrecision(device=device): "Precision",
+        MulticlassF1Score(device=device): "F1 Score",
         MulticlassRecall(device=device): "Recall",
     }
 
-    # test_metrics = train(
-    #     model,
-    #     train_loader,
-    #     test_loader,
-    #     loss_fn,
-    #     optimizer,
-    #     hyperparams["epochs"],
-    #     device,
-    #     metrics_dict,
-    # )
+    test_metrics = train(
+        model,
+        train_loader,
+        test_loader,
+        loss_fn,
+        optimizer,
+        hyperparams["epochs"],
+        device,
+        metrics_dict,
+    )
     # print(test_metrics)
 
-    cm = test(model, test_loader, device)
-    plot_confusion_matrix(cm.to(torch.int64).numpy(), GESTURE_NAMES)
+    # cm = test(model, test_loader, device)
+    # plot_confusion_matrix(cm.to(torch.int64).numpy(), GESTURE_NAMES)
 
 
 if __name__ == "__main__":
