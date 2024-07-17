@@ -3,13 +3,23 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.utils.data.dataloader import DataLoader
+from torcheval.metrics import (
+    Metric,
+    MulticlassAccuracy,
+    MulticlassConfusionMatrix,
+    MulticlassF1Score,
+    MulticlassPrecision,
+    MulticlassRecall,
+)
 from tqdm import tqdm
 
-from net import GestureNet, LandmarkDataset
+from conf_mat import plot_confusion_matrix
+from net import GESTURE_NAMES, GestureNet, LandmarkDataset
 
 DATA_DIR = Path(r".\data")
 MODEL_DIR = Path(r".\models")
 SEED = 42
+NUM_GESTURES = 10
 
 
 def split_data(data: np.ndarray, train_split: float) -> tuple[np.ndarray, np.ndarray]:
@@ -18,33 +28,39 @@ def split_data(data: np.ndarray, train_split: float) -> tuple[np.ndarray, np.nda
     return data[:split_index], data[split_index:]
 
 
-def calc_mse(model: torch.nn.Module, loader: DataLoader, device: torch.device) -> float:
-    mses = []
+def update_metrics(
+    model: GestureNet,
+    loader: DataLoader,
+    device: torch.device,
+    metrics: list[Metric[torch.Tensor]],
+) -> None:
     for landmarks, gesture in loader:
         landmarks = landmarks.to(device)
         gesture = gesture.to(device)
-
         predicted = model(landmarks)
 
-        # Calc MSE
-        mse = torch.nn.functional.mse_loss(gesture, predicted)
-        mses.append(mse.detach())
-
-    return np.array(mses).mean()
+        for metric in metrics:
+            metric.update(predicted.argmax(dim=1), gesture.argmax(dim=1))
 
 
 def train(
-        model: torch.nn.Module,
-        train_loader: DataLoader,
-        test_loader: DataLoader,
-        loss_fn: torch.nn.modules.loss,
-        optimizer: torch.optim,
-        epochs: int,
-        device: torch.device,
-) -> list[float]:
+    model: GestureNet,
+    train_loader: DataLoader,
+    test_loader: DataLoader,
+    loss_fn: torch.nn.modules.loss._Loss,
+    optimizer: torch.optim.Optimizer,
+    epochs: int,
+    device: torch.device,
+    metrics: dict[Metric[torch.Tensor], str],
+) -> dict[str, list[float]]:
     model = model.to(device)
-    best_mse = float("inf")
-    mses = []
+    metric_vals = {}
+    metric_objs = []
+    tqdm_str = ""
+    for metric, name in metrics.items():
+        metric_vals[name] = []
+        metric_objs.append(metric)
+        tqdm_str += f"{name}: %.4f "
 
     for _ in (pbar := tqdm(range(epochs))):
         model.train()
@@ -58,16 +74,32 @@ def train(
             loss_fn(predicted, gesture).backward()
             optimizer.step()
 
-        # Eval metrics
         model.eval()
-        mse = calc_mse(model, test_loader, device)
-        mses.append(mse)
-        pbar.set_description(f"Test MSE: {mse:.4f}")
+        update_metrics(model, test_loader, device, metric_objs)
+        for metric, name in metrics.items():
+            val = metric.compute().item()
+            metric_vals[name].append(val)
+            metric.reset()
 
-        if mse < best_mse:
-            torch.save(model.state_dict(), Path(f"{MODEL_DIR}/{model.__class__.__name__}.pt"))
+        epoch_metrics = [val[-1] for val in metric_vals.values()]
+        pbar.set_description(tqdm_str % tuple(epoch_metrics))
 
-    return mses
+    torch.save(model.state_dict(), MODEL_DIR / f"{model.__class__.__name__}.pt")
+    return metric_vals
+
+
+def test(model: GestureNet, loader: DataLoader, device: torch.device) -> torch.Tensor:
+    conf_mat = MulticlassConfusionMatrix(num_classes=NUM_GESTURES, device=device)
+    model.load_state_dict(torch.load(MODEL_DIR / f"{model.__class__.__name__}.pt"))
+    model.eval()
+
+    for landmarks, gesture in loader:
+        landmarks = landmarks.to(device)
+        gesture = gesture.to(device)
+        predicted = model(landmarks)
+        conf_mat.update(predicted.argmax(dim=1), gesture.argmax(dim=1))
+
+    return conf_mat.compute()
 
 
 def main():
@@ -81,17 +113,40 @@ def main():
     }
 
     train_set, test_set = split_data(data, hyperparams["train_split"])
-    train_loader = DataLoader(LandmarkDataset(train_set), batch_size=hyperparams["batch_size"], shuffle=True)
-    test_loader = DataLoader(LandmarkDataset(test_set), batch_size=hyperparams["batch_size"], shuffle=True)
+    train_loader = DataLoader(
+        LandmarkDataset(train_set), batch_size=hyperparams["batch_size"], shuffle=True
+    )
+    test_loader = DataLoader(
+        LandmarkDataset(test_set), batch_size=hyperparams["batch_size"], shuffle=True
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = GestureNet(num_gestures=10)
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparams["lr"])
     loss_fn = torch.nn.CrossEntropyLoss()
 
-    mses = train(model, train_loader, test_loader, loss_fn, optimizer, hyperparams["epochs"], device)
-    print(mses)
+    metrics_dict = {
+        MulticlassAccuracy(device=device): "Accuracy",
+        MulticlassF1Score(device=device): "F1 Score",
+        MulticlassPrecision(device=device): "Precision",
+        MulticlassRecall(device=device): "Recall",
+    }
+
+    # test_metrics = train(
+    #     model,
+    #     train_loader,
+    #     test_loader,
+    #     loss_fn,
+    #     optimizer,
+    #     hyperparams["epochs"],
+    #     device,
+    #     metrics_dict,
+    # )
+    # print(test_metrics)
+
+    cm = test(model, test_loader, device)
+    plot_confusion_matrix(cm.to(torch.int64).numpy(), GESTURE_NAMES)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
