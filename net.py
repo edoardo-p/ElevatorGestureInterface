@@ -34,6 +34,8 @@ class GestureNet(nn.Module):
 
     def infer(self, landmarks: np.ndarray, handedness: np.ndarray) -> str:
         landmarks[:, :, 0] = np.abs(handedness.reshape(-1, 1) - landmarks[:, :, 0])
+        landmarks = landmarks.reshape(landmarks.shape[0], -1)
+        landmarks -= landmarks.mean(axis=0)
         tensor = torch.tensor(landmarks, dtype=torch.float32).reshape(
             len(landmarks), -1
         )
@@ -46,7 +48,7 @@ class LandmarkDataset(Dataset):
         self.landmarks = data[:, :-1]
         gestures = data[:, -1]
         self.one_hot_gestures = nn.functional.one_hot(
-            torch.tensor(gestures, dtype=torch.long), num_classes=10
+            torch.tensor(gestures, dtype=torch.long)
         )
 
     def __len__(self) -> int:

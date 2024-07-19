@@ -19,7 +19,7 @@ from net import GESTURE_NAMES, GestureNet, LandmarkDataset
 DATA_DIR = Path(r".\data")
 MODEL_DIR = Path(r".\models")
 SEED = 42
-NUM_GESTURES = 10
+NUM_GESTURES = 8
 
 
 def split_data(data: np.ndarray, train_split: float) -> tuple[np.ndarray, np.ndarray]:
@@ -127,7 +127,7 @@ def main():
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = GestureNet(num_gestures=10)
+    model = GestureNet(num_gestures=NUM_GESTURES)
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparams["lr"])
     loss_fn = torch.nn.CrossEntropyLoss()
 
@@ -150,8 +150,8 @@ def main():
     )
     # print(test_metrics)
 
-    # cm = test(model, test_loader, device)
-    # plot_confusion_matrix(cm.to(torch.int64).numpy(), GESTURE_NAMES)
+    cm = test(model, test_loader, device)
+    plot_confusion_matrix(cm.to(torch.int64).numpy(), GESTURE_NAMES)
 
 
 if __name__ == "__main__":
