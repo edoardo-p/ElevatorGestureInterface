@@ -11,24 +11,24 @@ HandLandmarksConnections = mp.tasks.vision.HandLandmarksConnections
 class DataBuffer:
     def __init__(self, sample_size: int):
         self.sample_size = sample_size
-        self.landmarks_buffer: deque[np.ndarray[np.float32]] = deque(maxlen=sample_size)
+        self.landmarks_buffer: deque[np.ndarray] = deque(maxlen=sample_size)
         self.handedness_buffer: deque[str] = deque(maxlen=sample_size)
 
     @property
     def is_full(self) -> bool:
         return len(self.landmarks_buffer) == self.sample_size
 
-    def add_result(self, result: HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int) -> None:
+    def add_result(
+        self, result: HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int
+    ) -> None:
         if not result.hand_landmarks or not result.hand_landmarks[0]:
             self._clear()
             return
 
         self.handedness_buffer.append(result.handedness[0][0].display_name)
-        self._update_landmarks_buffer(
-            result.hand_landmarks[0]
-        )
+        self._update_landmarks_buffer(result.hand_landmarks[0])
 
-    def display_landmarks(self, image: np.ndarray[np.int32]) -> np.ndarray[np.int32]:
+    def display_landmarks(self, image: np.ndarray) -> np.ndarray:
         if not self.landmarks_buffer:
             return image
 
@@ -37,11 +37,8 @@ class DataBuffer:
         for conn in HandLandmarksConnections.HAND_CONNECTIONS:
             cv2.line(image, coords[conn.start], coords[conn.end], (255, 255, 255), 2)
 
-        for i, (x, y) in enumerate(coords):
+        for x, y in coords:
             cv2.circle(image, (x, y), 5, (0, 0, 255), -1)
-
-        hand_center = coords.mean(axis=0, dtype=np.int32)
-        cv2.putText(image, self.handedness_buffer[-1], hand_center, cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255))
 
         return image
 
