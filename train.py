@@ -49,7 +49,7 @@ def update_metrics(
             metric.update(predicted.argmax(dim=1), gesture.argmax(dim=1))
 
 
-def train(
+def train_model(
     model: GestureNet,
     train_loader: DataLoader,
     test_loader: DataLoader,
@@ -94,7 +94,9 @@ def train(
     return metric_vals
 
 
-def test(model: GestureNet, loader: DataLoader, device: torch.device) -> torch.Tensor:
+def test_model(
+    model: GestureNet, loader: DataLoader, device: torch.device
+) -> torch.Tensor:
     conf_mat = MulticlassConfusionMatrix(num_classes=NUM_GESTURES, device=device)
     model.load_state_dict(torch.load(MODEL_DIR / f"{model.__class__.__name__}.pt"))
     model.eval()
@@ -108,7 +110,7 @@ def test(model: GestureNet, loader: DataLoader, device: torch.device) -> torch.T
     return conf_mat.compute()
 
 
-def main():
+def main(test=False):
     np.random.seed(SEED)
     data = np.load(DATA_DIR / "hands.npy")
     hyperparams = {
@@ -138,21 +140,24 @@ def main():
         MulticlassRecall(device=device): "Recall",
     }
 
-    test_metrics = train(
-        model,
-        train_loader,
-        test_loader,
-        loss_fn,
-        optimizer,
-        hyperparams["epochs"],
-        device,
-        metrics_dict,
-    )
-    # print(test_metrics)
+    if not test:
+        test_metrics = train_model(
+            model,
+            train_loader,
+            test_loader,
+            loss_fn,
+            optimizer,
+            hyperparams["epochs"],
+            device,
+            metrics_dict,
+        )
+        # print(test_metrics)
 
-    cm = test(model, test_loader, device)
+    if test:
+        model.load_state_dict(torch.load(MODEL_DIR / f"{model.__class__.__name__}.pt"))
+    cm = test_model(model, test_loader, device)
     plot_confusion_matrix(cm.to(torch.int64).numpy(), GESTURE_NAMES)
 
 
 if __name__ == "__main__":
-    main()
+    main(True)
