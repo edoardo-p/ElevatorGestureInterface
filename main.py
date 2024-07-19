@@ -29,7 +29,7 @@ def main():
         result_callback=buffer.add_result,
     )
 
-    model = GestureNet(num_gestures=10)
+    model = GestureNet(num_gestures=8)
     model.load_state_dict(torch.load(MODELS_DIR / "GestureNet.pt"))
 
     video = cv2.VideoCapture(0)
@@ -46,9 +46,23 @@ def main():
             recognizer.detect_async(mp_image, int(timestamp))
             annotated_frame = buffer.display_landmarks(frame)
             if buffer.is_full:
-                gesture = model.infer(np.array(buffer.landmarks_buffer),
-                                      np.array([1 if hand == "Left" else 0 for hand in buffer.handedness_buffer]))
-                cv2.putText(annotated_frame, gesture, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255))
+                gesture = model.infer(
+                    np.array(buffer.landmarks_buffer),
+                    np.array(
+                        [
+                            1 if hand == "Left" else 0
+                            for hand in buffer.handedness_buffer
+                        ]
+                    ),
+                )
+                cv2.putText(
+                    annotated_frame,
+                    gesture,
+                    (10, 20),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (255, 255, 255),
+                )
             cv2.imshow("Landmarks", annotated_frame)
             if cv2.waitKey(1) & 0xFF == ord(" "):
                 break
