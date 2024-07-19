@@ -1,6 +1,5 @@
 import os
 import uuid
-from itertools import chain
 from pathlib import Path
 
 import cv2
@@ -76,8 +75,15 @@ def convert_image_to_numpy(data_dir: Path, model_path: Path) -> None:
                 else:
                     raise ValueError(f"Invalid handedness: {handedness}")
 
-                flattened_coords = list(chain(*coords))
-                flattened_coords.append(GESTURES.index(root.split("\\")[-1]))
+                coords = np.array(coords)
+                centered_coords = coords - coords.mean(axis=0)
+
+                flattened_coords = np.empty(
+                    (np.prod(centered_coords.shape) + 1,),
+                    dtype=np.float32,
+                )
+                flattened_coords[:-1] = centered_coords.flatten()
+                flattened_coords[-1] = GESTURES.index(root.split("\\")[-1])
                 coordinates.append(flattened_coords)
 
         np.save(data_dir / "hands.npy", np.array(coordinates))
