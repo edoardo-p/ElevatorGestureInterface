@@ -42,11 +42,11 @@ def update_metrics(
 ) -> None:
     for landmarks, gesture in loader:
         landmarks = landmarks.to(device)
-        gesture = gesture.to(device)
-        predicted = model(landmarks)
+        gesture = gesture.to(device).argmax(dim=1)
+        predicted = model(landmarks).argmax(dim=1)
 
         for metric in metrics:
-            metric.update(predicted.argmax(dim=1), gesture.argmax(dim=1))
+            metric.update(predicted, gesture)
 
 
 def train_model(
@@ -110,7 +110,7 @@ def test_model(
     return conf_mat.compute()
 
 
-def main(test=False):
+def main(train=True):
     np.random.seed(SEED)
     data = np.load(DATA_DIR / "hands.npy")
     hyperparams = {
@@ -133,14 +133,19 @@ def main(test=False):
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparams["lr"])
     loss_fn = torch.nn.CrossEntropyLoss()
 
+    kwargs = {
+        "average": "macro",
+        "num_classes": NUM_GESTURES,
+        "device": device,
+    }
     metrics_dict = {
-        MulticlassAccuracy(device=device): "Accuracy",
-        MulticlassPrecision(device=device): "Precision",
-        MulticlassF1Score(device=device): "F1 Score",
-        MulticlassRecall(device=device): "Recall",
+        MulticlassAccuracy(**kwargs): "Accuracy",
+        MulticlassPrecision(**kwargs): "Precision",
+        MulticlassF1Score(**kwargs): "F1 Score",
+        MulticlassRecall(**kwargs): "Recall",
     }
 
-    if not test:
+    if train:
         test_metrics = train_model(
             model,
             train_loader,
@@ -153,7 +158,7 @@ def main(test=False):
         )
         # print(test_metrics)
 
-    if test:
+    if not train:
         model.load_state_dict(torch.load(MODEL_DIR / f"{model.__class__.__name__}.pt"))
     cm = test_model(model, test_loader, device)
     plot_confusion_matrix(cm.to(torch.int64).numpy(), GESTURE_NAMES)
