@@ -79,7 +79,7 @@ def convert_image_to_numpy(data_dir: Path, model_path: Path) -> None:
                 coords = np.array(coords)
                 centered_coords = coords - coords.mean(axis=0)
                 coordinates.append(centered_coords.flatten())
-                gestures.append(GESTURES.index(root.split("\\")[-1]))
+                gestures.append([GESTURES.index(root.split("\\")[-1])])
 
         np.save(data_dir / "hands.npy", np.hstack((coordinates, gestures)))
         for photo in invalid_photos:
