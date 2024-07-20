@@ -30,12 +30,17 @@ class GestureNet(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.net(x).softmax(dim=0)
 
-    def infer(self, landmarks: np.ndarray, handedness: np.ndarray) -> str:
+    def infer(
+        self, landmarks: np.ndarray, handedness: np.ndarray, confidence: float
+    ) -> str:
         landmarks[:, :, 0] = np.abs(handedness.reshape(-1, 1) - landmarks[:, :, 0])
         landmarks -= landmarks.mean(axis=1, keepdims=True)
         landmarks = landmarks.reshape(landmarks.shape[0], -1)
         tensor = torch.tensor(landmarks, dtype=torch.float32)
         prediction = self.net(tensor).argmax(dim=1)
+        top = prediction.mode().values.item()
+        if (prediction == top).sum() / prediction.size(0) < confidence:
+            return "Unknown"
         return GESTURE_NAMES[prediction.mode().values.item()]
 
 

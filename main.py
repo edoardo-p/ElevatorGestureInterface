@@ -20,7 +20,7 @@ MAX_HANDS = 1
 
 
 def main():
-    buffer = DataBuffer(sample_size=20)
+    buffer = DataBuffer(sample_size=50)
 
     options = HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=MODELS_DIR / "hand_landmarker.task"),
@@ -54,6 +54,7 @@ def main():
                             for hand in buffer.handedness_buffer
                         ]
                     ),
+                    confidence=0.9,
                 )
                 cv2.putText(
                     annotated_frame,
