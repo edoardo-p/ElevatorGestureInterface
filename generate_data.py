@@ -53,7 +53,6 @@ def convert_image_to_numpy(data_dir: Path, model_path: Path) -> None:
                 if file == "hands.npy":
                     continue
                 image = cv2.imread(rf"{root}\{file}")
-                width, height, _ = image.shape
                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
                 result = recognizer.detect(mp_image)
 
