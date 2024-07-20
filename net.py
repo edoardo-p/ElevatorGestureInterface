@@ -34,11 +34,9 @@ class GestureNet(nn.Module):
 
     def infer(self, landmarks: np.ndarray, handedness: np.ndarray) -> str:
         landmarks[:, :, 0] = np.abs(handedness.reshape(-1, 1) - landmarks[:, :, 0])
+        landmarks -= landmarks.mean(axis=1, keepdims=True)
         landmarks = landmarks.reshape(landmarks.shape[0], -1)
-        landmarks -= landmarks.mean(axis=0)
-        tensor = torch.tensor(landmarks, dtype=torch.float32).reshape(
-            len(landmarks), -1
-        )
+        tensor = torch.tensor(landmarks, dtype=torch.float32)
         prediction = self.net(tensor).argmax(dim=1)
         return GESTURE_NAMES[prediction.mode().values.item()]
 
