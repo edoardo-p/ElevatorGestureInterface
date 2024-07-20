@@ -44,6 +44,7 @@ def convert_image_to_numpy(data_dir: Path, model_path: Path) -> None:
         running_mode=VisionRunningMode.IMAGE,
     )
     coordinates = []
+    gestures = []
     invalid_photos = []
 
     with HandLandmarker.create_from_options(options) as recognizer:
@@ -77,16 +78,10 @@ def convert_image_to_numpy(data_dir: Path, model_path: Path) -> None:
 
                 coords = np.array(coords)
                 centered_coords = coords - coords.mean(axis=0)
+                coordinates.append(centered_coords.flatten())
+                gestures.append(GESTURES.index(root.split("\\")[-1]))
 
-                flattened_coords = np.empty(
-                    (np.prod(centered_coords.shape) + 1,),
-                    dtype=np.float32,
-                )
-                flattened_coords[:-1] = centered_coords.flatten()
-                flattened_coords[-1] = GESTURES.index(root.split("\\")[-1])
-                coordinates.append(flattened_coords)
-
-        np.save(data_dir / "hands.npy", np.array(coordinates))
+        np.save(data_dir / "hands.npy", np.hstack((coordinates, gestures)))
         for photo in invalid_photos:
             os.remove(photo)
         print(f"Removed {len(invalid_photos)} photos of unrecognized hands")
@@ -100,5 +95,5 @@ def print_data_description(path: Path) -> None:
 
 if __name__ == "__main__":
     # take_picture(DATA_DIR / "images")
-    # convert_image_to_numpy(DATA_DIR, MODELS_DIR / "hand_landmarker.task")
+    convert_image_to_numpy(DATA_DIR, MODELS_DIR / "hand_landmarker.task")
     print_data_description(DATA_DIR / "hands.npy")
