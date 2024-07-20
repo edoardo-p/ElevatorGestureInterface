@@ -12,8 +12,6 @@ GESTURE_NAMES = [
     "Fifth floor",
     "Up",
     "Down",
-    "Open doors",
-    "Close doors",
 ]
 
 
