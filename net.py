@@ -40,7 +40,7 @@ class GestureNet(nn.Module):
         prediction = self.net(tensor).argmax(dim=1)
         top = prediction.mode().values.item()
         if (prediction == top).sum() / prediction.size(0) < confidence:
-            return "Unknown"
+            return ""
         return GESTURE_NAMES[prediction.mode().values.item()]
 
 

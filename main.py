@@ -59,10 +59,10 @@ def main():
                 cv2.putText(
                     annotated_frame,
                     gesture,
-                    (10, 20),
+                    (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (255, 255, 255),
+                    1,
+                    (0, 0, 0),
                 )
             cv2.imshow("Landmarks", annotated_frame)
             if cv2.waitKey(1) & 0xFF == ord(" "):
