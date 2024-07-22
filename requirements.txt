@@ -1,3 +1,4 @@
+ipykernel==6.29.5
 mediapipe==0.10.14
 numpy==1.26.4
 opencv-contrib-python==4.10.0.84
