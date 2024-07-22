@@ -16,10 +16,10 @@ GESTURE_NAMES = [
 
 
 class GestureNet(nn.Module):
-    def __init__(self, num_gestures: int, num_landmarks: int = 21):
+    def __init__(self, num_gestures: int, num_landmarks: int = 42):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(num_landmarks * 2, 16),
+            nn.Linear(num_landmarks, 16),
             nn.ReLU(),
             nn.Linear(16, 16),
             nn.ReLU(),
