@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import numpy as np
@@ -18,6 +19,7 @@ from net import GESTURE_NAMES, GestureNet, LandmarkDataset
 
 DATA_DIR = Path(r".\data")
 MODEL_DIR = Path(r".\models")
+EXP_DIR = Path(r".\experiments")
 SEED = 42
 NUM_GESTURES = 8
 
@@ -90,29 +92,25 @@ def train_model(
         epoch_metrics = [val[-1] for val in metric_vals.values()]
         pbar.set_description(tqdm_str % tuple(epoch_metrics))
 
-    torch.save(model.state_dict(), MODEL_DIR / f"{model.__class__.__name__}.pt")
     return metric_vals
 
 
 def test_model(
     model: GestureNet, loader: DataLoader, device: torch.device
-) -> torch.Tensor:
+) -> np.ndarray:
     conf_mat = MulticlassConfusionMatrix(num_classes=NUM_GESTURES, device=device)
-    model.load_state_dict(torch.load(MODEL_DIR / f"{model.__class__.__name__}.pt"))
     model.eval()
 
     for landmarks, gesture in loader:
         landmarks = landmarks.to(device)
-        gesture = gesture.to(device)
-        predicted = model(landmarks)
-        conf_mat.update(predicted.argmax(dim=1), gesture.argmax(dim=1))
+        gesture = gesture.to(device).argmax(dim=1)
+        predicted = model(landmarks).argmax(dim=1)
+        conf_mat.update(predicted, gesture)
 
-    return conf_mat.compute()
+    return conf_mat.compute().numpy()
 
 
 def main(train=True):
-    np.random.seed(SEED)
-    data = np.load(DATA_DIR / "hands.npy")
     hyperparams = {
         "train_split": 0.8,
         "lr": 0.001,
@@ -120,18 +118,7 @@ def main(train=True):
         "epochs": 500,
     }
 
-    train_set, test_set = split_data(data, hyperparams["train_split"])
-    train_loader = DataLoader(
-        LandmarkDataset(train_set), batch_size=hyperparams["batch_size"], shuffle=True
-    )
-    test_loader = DataLoader(
-        LandmarkDataset(test_set), batch_size=hyperparams["batch_size"], shuffle=True
-    )
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = GestureNet(num_gestures=NUM_GESTURES)
-    optimizer = torch.optim.Adam(model.parameters(), lr=hyperparams["lr"])
-    loss_fn = torch.nn.CrossEntropyLoss()
 
     kwargs = {
         "average": "macro",
@@ -145,23 +132,51 @@ def main(train=True):
         MulticlassRecall(**kwargs): "Recall",
     }
 
-    if train:
-        test_metrics = train_model(
-            model,
-            train_loader,
-            test_loader,
-            loss_fn,
-            optimizer,
-            hyperparams["epochs"],
-            device,
-            metrics_dict,
+    for sub_dir in os.listdir(EXP_DIR):
+        np.random.seed(SEED)
+        data = np.load(EXP_DIR / sub_dir / "hands.npy")
+        train_set, test_set = split_data(data, hyperparams["train_split"])
+        train_loader = DataLoader(
+            LandmarkDataset(train_set),
+            batch_size=hyperparams["batch_size"],
+            shuffle=True,
         )
-        # print(test_metrics)
+        test_loader = DataLoader(
+            LandmarkDataset(test_set),
+            batch_size=hyperparams["batch_size"],
+            shuffle=True,
+        )
 
-    if not train:
-        model.load_state_dict(torch.load(MODEL_DIR / f"{model.__class__.__name__}.pt"))
-    cm = test_model(model, test_loader, device)
-    plot_confusion_matrix(cm.to(torch.int64).numpy(), GESTURE_NAMES)
+        runs_metrics = []
+        cms = []
+
+        for run in range(5):
+            print(f"Training {sub_dir} run {run}")
+            num_landmarks = 63 if sub_dir.startswith("xyz") else 42
+            model = GestureNet(num_gestures=NUM_GESTURES, num_landmarks=num_landmarks)
+            loss_fn = torch.nn.CrossEntropyLoss()
+            optimizer = torch.optim.Adam(model.parameters(), lr=hyperparams["lr"])
+            test_metrics = train_model(
+                model,
+                train_loader,
+                test_loader,
+                loss_fn,
+                optimizer,
+                hyperparams["epochs"],
+                device,
+                metrics_dict,
+            )
+            runs_metrics.append(test_metrics)
+            torch.save(
+                model.state_dict(),
+                EXP_DIR / sub_dir / f"{model.__class__.__name__}_{run}.pt",
+            )
+
+            cm = test_model(model, test_loader, device)
+            cms.append(cm)
+
+        np.save(EXP_DIR / sub_dir / "metrics.npy", np.array(runs_metrics))
+        np.save(EXP_DIR / sub_dir / "cms.npy", np.array(cms))
 
 
 if __name__ == "__main__":
