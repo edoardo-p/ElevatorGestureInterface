@@ -13,7 +13,7 @@ VisionRunningMode = mp.tasks.vision.RunningMode
 
 DATA_DIR = Path(r".\data")
 MODELS_DIR = Path(r".\models")
-GESTURES = ("0", "1", "2", "3", "4", "5", "u", "d", "o", "c")
+GESTURES = ("0", "1", "2", "3", "4", "5", "u", "d")
 
 
 def take_picture(path: Path) -> None:
@@ -48,7 +48,7 @@ def convert_image_to_numpy(data_dir: Path, model_path: Path) -> None:
     invalid_photos = []
 
     with HandLandmarker.create_from_options(options) as recognizer:
-        for root, dirs, files in os.walk(data_dir):
+        for root, _, files in os.walk(data_dir):
             for file in files:
                 if file == "hands.npy":
                     continue
@@ -72,9 +72,7 @@ def convert_image_to_numpy(data_dir: Path, model_path: Path) -> None:
                 else:
                     raise ValueError(f"Invalid handedness: {handedness}")
 
-                coords = np.array(coords)
-                centered_coords = coords - coords.mean(axis=0)
-                coordinates.append(centered_coords.flatten())
+                coordinates.append(np.array(coords).flatten())
                 gestures.append([GESTURES.index(root.split("\\")[-1])])
 
         np.save(data_dir / "hands.npy", np.hstack((coordinates, gestures)))
