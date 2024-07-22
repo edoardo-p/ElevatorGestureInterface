@@ -20,7 +20,7 @@ MAX_HANDS = 1
 
 
 def main():
-    buffer = DataBuffer(sample_size=50)
+    buffer = DataBuffer(sample_size=20)
 
     options = HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=MODELS_DIR / "hand_landmarker.task"),
@@ -29,7 +29,7 @@ def main():
         result_callback=buffer.add_result,
     )
 
-    model = GestureNet(num_gestures=8)
+    model = GestureNet(num_gestures=8, num_landmarks=63)
     model.load_state_dict(torch.load(MODELS_DIR / "GestureNet.pt"))
 
     video = cv2.VideoCapture(0)

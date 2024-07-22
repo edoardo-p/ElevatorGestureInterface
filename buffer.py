@@ -33,7 +33,7 @@ class DataBuffer:
             return image
 
         height, width, *_ = image.shape
-        coords = (self.landmarks_buffer[-1] * (width, height)).astype(np.int32)
+        coords = (self.landmarks_buffer[-1][:, :-1] * (width, height)).astype(np.int32)
         for conn in HandLandmarksConnections.HAND_CONNECTIONS:
             cv2.line(image, coords[conn.start], coords[conn.end], (255, 255, 255), 2)
 
@@ -43,9 +43,9 @@ class DataBuffer:
         return image
 
     def _update_landmarks_buffer(self, landmarks) -> None:
-        landmark_coords = np.empty((21, 2), dtype=np.float32)
+        landmark_coords = np.empty((21, 3), dtype=np.float32)
         for i, landmark in enumerate(landmarks):
-            landmark_coords[i] = landmark.x, landmark.y
+            landmark_coords[i] = landmark.x, landmark.y, landmark.z
         self.landmarks_buffer.append(landmark_coords)
 
     def _clear(self) -> None:

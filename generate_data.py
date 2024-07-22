@@ -62,16 +62,7 @@ def convert_image_to_numpy(data_dir: Path, model_path: Path) -> None:
                     continue
 
                 landmarks = result.hand_landmarks[0]
-                handedness = result.handedness[0][0].display_name
-
-                if handedness == "Left":
-                    # Flips the x-coordinates to always have a 'right' hand
-                    coords = [(1 - landmark.x, landmark.y) for landmark in landmarks]
-                elif handedness == "Right":
-                    coords = [(landmark.x, landmark.y) for landmark in landmarks]
-                else:
-                    raise ValueError(f"Invalid handedness: {handedness}")
-
+                coords = [(l.x, l.y, l.z) for l in landmarks]
                 coordinates.append(np.array(coords).flatten())
                 gestures.append([GESTURES.index(root.split("\\")[-1])])
 

@@ -14,8 +14,7 @@ from torcheval.metrics import (
 )
 from tqdm import tqdm
 
-from conf_mat import plot_confusion_matrix
-from net import GESTURE_NAMES, GestureNet, LandmarkDataset
+from net import GestureNet, LandmarkDataset
 
 DATA_DIR = Path(r".\data")
 MODEL_DIR = Path(r".\models")
@@ -110,7 +109,7 @@ def test_model(
     return conf_mat.compute().numpy()
 
 
-def main(train=True):
+def main():
     hyperparams = {
         "train_split": 0.8,
         "lr": 0.001,
@@ -180,4 +179,4 @@ def main(train=True):
 
 
 if __name__ == "__main__":
-    main(True)
+    main()
